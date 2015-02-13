@@ -1,0 +1,18 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\T3\VisGraph.cs">
+    <Files>
+      <File FileName="Assets\T3\Obstacle.cs" Line="15" Column="33" />
+      <File FileName="Assets\T3\VisGraph.cs" Line="98" Column="55" />
+      <File FileName="Assets\T3\TestLine.cs" Line="1" Column="1" />
+      <File FileName="Assets\T3\PolyReadTest.cs" Line="24" Column="54" />
+      <File FileName="Assets\T3\PolyData.cs" Line="4" Column="1" />
+      <File FileName="Assets\T3\Line.cs" Line="15" Column="2" />
+      <File FileName="Assets\T3\PolyMapLoader.cs" Line="29" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
