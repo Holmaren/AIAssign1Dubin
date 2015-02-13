@@ -14,18 +14,17 @@ public class DubinWaypoint : MonoBehaviour {
 	float minRadius = 0f;
 
 	List<Vector3> path = null;
-	
 
 	void Start () {
 		float maxWheelRad = maxWheelAngle * (Mathf.PI / 180.0f);
-		Debug.Log ("MaxWheelRad:" + maxWheelRad);
+		//Debug.Log ("MaxWheelRad:" + maxWheelRad);
 		minRadius = Mathf.Abs (carLength / (Mathf.Tan (maxWheelRad) ));
-		Debug.Log ("minRadius:" + minRadius);
+		//Debug.Log ("minRadius:" + minRadius);
 		dubin = gameObject.AddComponent<Dubin> ();
 
 		List<Vector3> prePath = new List<Vector3> ();
 		prePath.Add (Vector3.zero);
-		prePath.Add (new Vector3 (-10, 1, -10));
+		prePath.Add (new Vector3 (-10, 1, 10));
 
 		path = new List<Vector3> ();
 		Vector3 start = prePath [0];
@@ -41,6 +40,7 @@ public class DubinWaypoint : MonoBehaviour {
 		//path.Add (S.point1);
 		//path.Add (S.point2);
 		path.Add (prePath [1]);
+	//	path.Add (new Vector3 (-10, 1, -10));
 
 		StartCoroutine ("Move");
 
@@ -52,8 +52,6 @@ public class DubinWaypoint : MonoBehaviour {
 	Vector3 current = Vector3.zero;
 	IEnumerator Move() {
 		current = path [index];
-
-
 
 		Line S = dubin.MinTrajectory (transform.position, current, transform.rotation, 
 		                              transform.rotation, minRadius, minRadius);
@@ -108,30 +106,10 @@ public class DubinWaypoint : MonoBehaviour {
 				carMadeIt = true;
 			
 			yield return null;
-
-			/*
-			float wheelAngleRad=maxWheelAngle*(Mathf.PI/180);
-			float dTheta=(vel/carLength)*Mathf.Tan(wheelAngleRad);
-			Quaternion theta = Quaternion.LookRotation (transform.up - transform.position);
-
-			if(transform.rotation!=theta){
-				Debug.Log("ROTATE!!");
-				transform.rotation = Quaternion.RotateTowards (transform.rotation, theta, dTheta );
-			}
-
-			Vector3 curDir=transform.eulerAngles;
-			Vector3 newPos=transform.position;
-			float angleRad=-curDir.y*(Mathf.PI/180);
-			newPos.x=newPos.x+(vel*Mathf.Sin(angleRad)*Time.deltaTime);
-			newPos.z=newPos.z+(vel*Mathf.Cos(angleRad)*Time.deltaTime);
-			transform.position=newPos;
-
-			if(Vector3.Distance (current, transform.position) < 0.1)
-				carMadeIt = true;
-
-			yield return null;*/
 		}
 	}
+
+
 
 	void OnDrawGizmos() {
 		if (dubin != null) {
