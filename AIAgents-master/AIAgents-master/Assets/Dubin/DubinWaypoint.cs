@@ -24,7 +24,7 @@ public class DubinWaypoint : MonoBehaviour {
 
 		List<Vector3> prePath = new List<Vector3> ();
 		prePath.Add (Vector3.zero);
-		prePath.Add (new Vector3 (-10, 1, 10));
+		prePath.Add (new Vector3 (10, 1, 0));
 
 		path = new List<Vector3> ();
 		Vector3 start = prePath [0];
@@ -40,7 +40,9 @@ public class DubinWaypoint : MonoBehaviour {
 		//path.Add (S.point1);
 		//path.Add (S.point2);
 		path.Add (prePath [1]);
-	//	path.Add (new Vector3 (-10, 1, -10));
+		path.Add (new Vector3 (10, 1, -10));
+		path.Add (new Vector3 (-20, 1, 15));
+		path.Add (new Vector3 (-20, 1, 13));
 
 		StartCoroutine ("Move");
 
@@ -50,36 +52,46 @@ public class DubinWaypoint : MonoBehaviour {
 
 	int index = 1;
 	Vector3 current = Vector3.zero;
+	public float goalInterval;
 	IEnumerator Move() {
 		current = path [index];
 
-		Line S = dubin.MinTrajectory (transform.position, current, transform.rotation, 
+
+		List<Vector3> S = dubin.MinTrajectory (transform.position, current, transform.rotation, 
 		                              transform.rotation, minRadius, minRadius);
-		dS = S;
+
+		dS = new Line(S[0], S[1]);
 
         bool followS = true;
 		int q = 2;
         while (true) {
 			if(carMadeIt) {
-				if(Vector3.Distance (transform.position, path[index]) < 1){
+				if(Vector3.Distance (transform.position, path[index]) < goalInterval){
 					index++;
+					
+					if(index >= path.Count)
+						yield break;
+
 					followS = true;
+
+					current = path[index];
+					S = dubin.MinTrajectory (transform.position, current, transform.rotation, 
+					                                       transform.rotation, minRadius, minRadius);
+					dS = new Line(S[0], S[1]);	
                 }
                 
-                if(index >= path.Count)
-					yield break;
 			}
 
 			if(followS) {
 
 				if(q == 2){
-					current = S.point1;
-					if(Vector3.Distance (transform.position, current) < 1)
+					current = S[0];
+					if(Vector3.Distance (transform.position, current) < goalInterval)
 						q--;
 				}
 				if(q == 1)
-					current = S.point2;
-					if(Vector3.Distance (transform.position, current) < 1)
+					current = S[1];
+				if(Vector3.Distance (transform.position, current) < goalInterval)
 						q--;
 				if(q == 0) {
 					followS = false;
@@ -102,7 +114,7 @@ public class DubinWaypoint : MonoBehaviour {
 			newPos.z=newPos.z+(vel*Mathf.Cos(angleRad)*Time.deltaTime);
 			transform.position=newPos;
 			
-			if(Vector3.Distance (current, transform.position) < 1)
+			if(Vector3.Distance (current, transform.position) < goalInterval)
 				carMadeIt = true;
 			
 			yield return null;

@@ -23,11 +23,14 @@ public class CSC {
 }
 
 public class CCC {
-	public List<KeyValuePair<Vector3, string>> arcPos;
+	public List<Vector3> arcPos;
+	public float cost;
 
-	public CCC(KeyValuePair<Vector3, string> pos1, KeyValuePair<Vector3, string> pos2) {
-		arcPos.Add (pos1);
-		arcPos.Add (pos2);
+	public CCC(Vector3 pt1, Vector3 pt2) {
+		arcPos = new List<Vector3> ();
+		arcPos.Add (pt1);
+		arcPos.Add (pt2);
+		cost = 0;
 	}
 }
 
@@ -39,12 +42,28 @@ public class Dubin : MonoBehaviour {
 	public Circle[] proxCircles = null;
 	public List<Line> tangents = null;
 
-	public Line MinTrajectory(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
+	public List<Vector3> MinTrajectory(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
 	                          float r1, float r2) {
 		tangents = new List<Line> ();
 
-		Line SI = CSCMinTrajectoryInner(start, goal, startAngle, goalAngle, r1, r2);
-		return SI;
+		CSC csc = CSCMinTrajectoryInner(start, goal, startAngle, goalAngle, r1, r2);
+		CCC ccc= CCCMinTrajectory (start, goal, startAngle, goalAngle, r1, r2);
+
+		print ("csc cost " + csc.cost);
+		print ("ccc cost " + ccc.cost);
+
+		if (float.IsNaN (ccc.cost) || csc.cost < ccc.cost) {
+			List<Vector3> ret = new List<Vector3> ();
+			ret.Add (csc.tangent.point1);
+			ret.Add (csc.tangent.point2);
+			
+			print ("CSC");
+			return ret;
+		} 
+		else {
+			print ("CCC");
+			return ccc.arcPos;
+		}
 
 		/*
         Line SI = CSCMinTrajectoryInner(start, goal, startAngle, goalAngle, r1, r2);
@@ -63,14 +82,69 @@ public class Dubin : MonoBehaviour {
 		*/
 	}
 
-	public Line CCCMinTrajectoryOuter(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
+	public CCC CCCMinTrajectory(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
 	                             float r1, float r2) {
-		CSCTrajectories(start, goal, startAngle,goalAngle, r1, r2, "outer");
+		CCC = new List<CCC> ();
+		float rMin;
+		if (r1 < r2)
+			rMin = r1;
+		else
+			rMin = r2;
 
-		return null;
+		Vector3 p1 = start;
+		Vector3 p2 = goal;
+		float p1p3 = 2 * rMin;
+		float p2p3 = 2 * rMin;
+		float p1p2 = Mathf.Sqrt ((goal.x - start.x) * (goal.x - start.x) +
+						(goal.z - start.z) * (goal.z - start.z));
+		Vector3 V1 = p2 - p1;
+		float theta = Mathf.Acos (p1p2 / (4 * rMin));
+
+		// LRL
+		Vector3 p3 = new Vector3 (start.x + 2 * rMin * Mathf.Cos (theta), 1, start.z + 2 * rMin * Mathf.Sin(theta));
+		Vector3 V2 = p1 - p3;
+		V2 = V2.normalized * rMin;
+		Vector3 pt1 = p3 + V2;
+		V2 = p2 - p3;
+		V2 = V2.normalized * rMin;
+		Vector3 pt2 = p3 + V2;
+
+		CCC ccc = new CCC (pt1, pt2);
+		ccc.cost += ArcLength (p1, start, pt1, "L", r1);
+		ccc.cost += ArcLength (p3, pt1, pt2, "R", r1);
+		ccc.cost += ArcLength (p2, pt2, goal, "L", r1);
+		CCC.Add (ccc);
+
+		// RLR
+		p3 = new Vector3 (start.x - 2 * rMin * Mathf.Cos (theta), 1, start.z - 2 * rMin * Mathf.Sin(theta));
+		V2 = p1 - p3;
+		V2 = V2.normalized * rMin;
+		pt1 = p3 + V2;
+		V2 = p2 - p3;
+		V2 = V2.normalized * rMin;
+		pt2 = p3 + V2;
+
+		ccc = new CCC (pt1, pt2);
+		ccc.cost += ArcLength (p1, start, pt1, "R", r1);
+		ccc.cost += ArcLength (p3, pt1, pt2, "L", r1);
+		ccc.cost += ArcLength (p2, pt2, goal, "R", r1);
+		CCC.Add (ccc);
+
+		// min
+		int best = 0;
+		float bestCost = -1;
+		for (int i = 0; i < CCC.Count; i++) {
+			//	print (CSC[i].cost);
+			if(bestCost == -1 || CCC[i].cost < bestCost) {
+				best = i;
+				bestCost = CCC[i].cost;
+			}
+		}
+
+		return CCC[best];
 	}
 
-	public Line CSCMinTrajectoryInner(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
+	public CSC CSCMinTrajectoryInner(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
 	                   float r1, float r2) {
 
 		CSC = new List<CSC> ();
@@ -86,7 +160,7 @@ public class Dubin : MonoBehaviour {
 			}
 		}
 
-		return CSC[best].tangent;
+		return CSC [best];
 	}
 
 	void CSCTrajectories(Vector3 start, Vector3 goal, Quaternion startAngle, Quaternion goalAngle,
@@ -137,7 +211,7 @@ public class Dubin : MonoBehaviour {
 				p1 = proxCircles[1].pos;
 				p2 = tangent.point2;
 				p3 = goal;
-				csc.cost += ArcLength (p1, p2, p3, "R", r1);
+				csc.cost += ArcLength (p1, p2, p3, "L", r1);
 				CSC.Add (csc);
 			}
 		}
@@ -157,7 +231,7 @@ public class Dubin : MonoBehaviour {
 				Vector3 p1 = proxCircles[0].pos;
 				Vector3 p2 = start;
 				Vector3 p3 = tangent.point1;
-				csc.cost += ArcLength (p1, p2, p3, "R", r1);
+				csc.cost += ArcLength (p1, p2, p3, "L", r1);
 				csc.cost += Vector3.Distance (tangent.point1, tangent.point2);
 				p1 = proxCircles[1].pos;
 				p2 = tangent.point2;
@@ -182,12 +256,12 @@ public class Dubin : MonoBehaviour {
 				Vector3 p1 = proxCircles[0].pos;
 				Vector3 p2 = start;
 				Vector3 p3 = tangent.point1;
-				csc.cost += ArcLength (p1, p2, p3, "R", r1);
+				csc.cost += ArcLength (p1, p2, p3, "L", r1);
 				csc.cost += Vector3.Distance (tangent.point1, tangent.point2);
 				p1 = proxCircles[1].pos;
 				p2 = tangent.point2;
 				p3 = goal;
-				csc.cost += ArcLength (p1, p2, p3, "R", r1);
+				csc.cost += ArcLength (p1, p2, p3, "L", r1);
 				CSC.Add (csc);
 			}
 		}
@@ -421,11 +495,10 @@ public class Dubin : MonoBehaviour {
 		Vector3 V2 = p3 - p1;
 		
 		float theta = Mathf.Atan2 (V2.z, V2.x) - Mathf.Atan2 (V1.z, V1.x);
-		print (Mathf.Atan2 (V2.z, V2.x));
-		if (theta < 0 && d == "left") {
+		if (theta < 0 && d == "L") {
 			theta = theta + 2 * Mathf.PI;
 		} 
-		else if (theta > 0 && d == "right") {
+		else if (theta > 0 && d == "R") {
 			theta = theta - 2 * Mathf.PI;
 		}
 
